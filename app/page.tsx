@@ -8,7 +8,7 @@ import TodoForm from '../components/TodoForm'
 
 export default function Home() {
   const [newTodo, setNewTodo] = useState('')
-  const { todos, isLoading, addTodo, deleteTodo, reorderTodos } = useTodos()
+  const { todos, isLoading, addTodo, deleteTodo, updateTodo, reorderTodos } = useTodos()
 
   return (
     <main className="max-w-xl mx-auto my-10 px-4">
@@ -41,6 +41,7 @@ export default function Home() {
                 key={todo.id}
                 todo={todo}
                 onDelete={deleteTodo}
+                onUpdate={updateTodo}
               />
             ))}
           </AnimatePresence>
