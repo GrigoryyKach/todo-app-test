@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import axios from 'axios'
 import { Todo } from '@/types/todo'
+import axios from 'axios'
+import { useEffect, useState } from 'react'
 
 const LOCAL_STORAGE_KEY = 'todos'
 
@@ -18,8 +18,12 @@ export const useTodos = () => {
     } else {
       axios.get<Todo[]>('https://jsonplaceholder.typicode.com/todos?_limit=10')
         .then(res => {
-          setTodos(res.data)
-          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(res.data))
+          const withIds = res.data.map(todo => ({
+            ...todo,
+            id: Date.now() + Math.random() // уникальный ID
+          }))
+          setTodos(withIds)
+          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(withIds))
         })
         .finally(() => setIsLoading(false))
     }
@@ -69,7 +73,10 @@ export const useTodos = () => {
     )
     syncLocal(updated)
   }
-  
 
-  return { todos, isLoading, addTodo, deleteTodo, updateTodo }
+  const reorderTodos = (newOrder: Todo[]) => {
+    syncLocal(newOrder)
+  }
+
+  return { todos, isLoading, addTodo, deleteTodo, updateTodo, reorderTodos }
 }
