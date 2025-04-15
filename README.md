@@ -33,4 +33,4 @@ Start the server
 
 ## Tech Stack
 
-React.js, Next.js, TypeScript, Axios, Framer-Motion, TailwindCSS
+React.js, Next.js, TypeScript, React Query, Axios, Framer-Motion, TailwindCSS
