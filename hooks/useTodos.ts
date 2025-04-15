@@ -1,74 +1,91 @@
 'use client'
 
 import { Todo } from '@/types/todo'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import axios from 'axios'
 import { useEffect, useState } from 'react'
 
+const TODOS_KEY = ['todos']
 const LOCAL_STORAGE_KEY = 'todos'
 
 export const useTodos = () => {
-  const [todos, setTodos] = useState<Todo[]>([])
+  const [localTodos, setLocalTodos] = useState<Todo[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const stored = localStorage.getItem(LOCAL_STORAGE_KEY)
     if (stored) {
-      setTodos(JSON.parse(stored))
+      setLocalTodos(JSON.parse(stored))
       setIsLoading(false)
-    } else {
-      axios.get<Todo[]>('https://jsonplaceholder.typicode.com/todos?_limit=10')
-        .then(res => {
-          const withIds = res.data.map(todo => ({
-            ...todo,
-            id: Date.now() + Math.random() // уникальный ID
-          }))
-          setTodos(withIds)
-          localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(withIds))
-        })
-        .finally(() => setIsLoading(false))
     }
   }, [])
 
-  const syncLocal = (updated: Todo[]) => {
-    setTodos(updated)
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated))
+  useQuery<Todo[], Error>({
+    queryKey: TODOS_KEY,
+    queryFn: async () => {
+      const res = await axios.get<Todo[]>('https://jsonplaceholder.typicode.com/todos?_limit=10')
+      return res.data
+    },
+    enabled: localTodos.length === 0,
+    // @ts-ignore
+    onSuccess: (data: any) => {
+      const withIds = data.map((todo: any) => ({
+        ...todo,
+        id: Date.now() + Math.random(),
+      }))
+      setLocalTodos(withIds)
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(withIds))
+      setIsLoading(false)
+    },
+    onError: () => {
+      setIsLoading(false)
+    }
+  })
+
+  const syncLocal = (todos: Todo[]) => {
+    setLocalTodos(todos)
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(todos))
   }
 
-  const addTodo = async (title: string) => {
-    const tempId = Math.floor(Math.random() * 1000000)
-    const newTodo: Todo = {
-      id: tempId,
-      title,
-      completed: false,
-    }
-
-    const optimistic = [newTodo, ...todos]
-    syncLocal(optimistic)
-
-    try {
-      const res = await axios.post<Todo>('https://jsonplaceholder.typicode.com/todos', newTodo)
-      const confirmed = optimistic.map(todo =>
-        todo.id === tempId ? { ...res.data, id: tempId } : todo
+  const addMutation = useMutation({
+    mutationFn: (title: string) =>
+      axios.post<Todo>('https://jsonplaceholder.typicode.com/todos', {
+        title,
+        completed: false,
+      }),
+    onMutate: async (title) => {
+      const tempId = Math.floor(Math.random() * 1000000)
+      const newTodo = { id: tempId, title, completed: false }
+      const optimistic = [newTodo, ...localTodos]
+      syncLocal(optimistic)
+      return { optimistic, tempId }
+    },
+    onSuccess: (res, title, context) => {
+      const confirmed = localTodos.map(todo =>
+        todo.id === context?.tempId ? { ...res.data, id: context.tempId } : todo
       )
       syncLocal(confirmed)
-    } catch {
-      syncLocal(todos)
+    },
+    onError: (_err, _title, context) => {
+      syncLocal(context?.optimistic || localTodos)
     }
-  }
+  })
 
-  const deleteTodo = async (id: number) => {
-    const optimistic = todos.filter(todo => todo.id !== id)
-    syncLocal(optimistic)
-
-    try {
-      await axios.delete(`https://jsonplaceholder.typicode.com/todos/${id}`)
-    } catch {
-      syncLocal(todos)
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) =>
+      axios.delete(`https://jsonplaceholder.typicode.com/todos/${id}`),
+    onMutate: async (id) => {
+      const optimistic = localTodos.filter(todo => todo.id !== id)
+      syncLocal(optimistic)
+      return { optimistic }
+    },
+    onError: (_err, _id, context) => {
+      syncLocal(context?.optimistic || localTodos)
     }
-  }
+  })
 
   const updateTodo = (id: number, newTitle: string) => {
-    const updated = todos.map(todo =>
+    const updated = localTodos.map(todo =>
       todo.id === id ? { ...todo, title: newTitle } : todo
     )
     syncLocal(updated)
@@ -78,5 +95,12 @@ export const useTodos = () => {
     syncLocal(newOrder)
   }
 
-  return { todos, isLoading, addTodo, deleteTodo, updateTodo, reorderTodos }
+  return {
+    todos: localTodos,
+    isLoading,
+    addTodo: addMutation.mutate,
+    deleteTodo: deleteMutation.mutate,
+    updateTodo,
+    reorderTodos
+  }
 }
