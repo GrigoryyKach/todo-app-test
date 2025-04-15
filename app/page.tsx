@@ -1,16 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import DraggableTodoItem from '@/components/DragggableTodoItem'
 import { useTodos } from '@/hooks/useTodos'
+import { AnimatePresence, Reorder } from 'framer-motion'
+import { useState } from 'react'
 import TodoForm from '../components/TodoForm'
-import TodoItem from '../components/TodoItem'
 
 export default function Home() {
   const [newTodo, setNewTodo] = useState('')
-  const { todos, isLoading, addTodo, deleteTodo, updateTodo } = useTodos()
+  const { todos, isLoading, addTodo, deleteTodo, updateTodo, reorderTodos } = useTodos()
 
   return (
-    <main className="max-w-xl mx-auto mt-10 px-4">
+    <main className="max-w-xl mx-auto my-10 px-4">
       <h1 className="text-3xl font-bold mb-4 text-center">Todo App</h1>
 
       <TodoForm
@@ -27,16 +28,24 @@ export default function Home() {
       {isLoading ? (
         <p className="mt-4 text-gray-500">Loading...</p>
       ) : (
-        <ul className="mt-4 space-y-2">
-          {todos.map(todo => (
-            <TodoItem
-              key={todo.id}
-              todo={todo}
-              onDelete={deleteTodo}
-              onUpdate={updateTodo}
-            />
-          ))}
-        </ul>
+        <Reorder.Group
+          as="ul"
+          axis="y"
+          values={todos}
+          onReorder={reorderTodos}
+          className="space-y-2 mt-4"
+        >
+          <AnimatePresence>
+            {todos.map((todo) => (
+              <DraggableTodoItem
+                key={todo.id}
+                todo={todo}
+                onDelete={deleteTodo}
+                onUpdate={updateTodo}
+              />
+            ))}
+          </AnimatePresence>
+        </Reorder.Group>
       )}
     </main>
   )
