@@ -1,7 +1,7 @@
 
 # Todo App
 
-A modern Todo application built with Next.js that leverages the JSONPlaceholder API for demo data. It features full CRUD operations, optimistic UI updates, and drag-and-drop reordering with framer-motion. The app persists data locally using localStorage and supports editing via double-click or a dedicated edit button, ensuring an intuitive experience on both desktop and mobile devices.
+A modern Todo application built with Next.js that leverages the JSONPlaceholder API for demo data. It features full CRUD operations, optimistic UI updates, and drag-and-drop reordering with framer-motion.
 
 
 ## Run Locally
@@ -33,4 +33,4 @@ Start the server
 
 ## Tech Stack
 
-React.js, Next.js, TypeScript, React Query, Axios, Framer-Motion, TailwindCSS
+React.js, Next.js, TypeScript, Axios, Framer-Motion, TailwindCSS

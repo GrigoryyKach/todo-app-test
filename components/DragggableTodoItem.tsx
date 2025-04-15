@@ -5,11 +5,9 @@ import TodoItem from './TodoItem'
 export default function DraggableTodoItem({
   todo,
   onDelete,
-  onUpdate
 }: {
   todo: Todo,
   onDelete: (id: number) => void,
-  onUpdate: (id: number, newTitle: string) => void
 }) {
   const controls = useDragControls()
   return (
@@ -27,7 +25,6 @@ export default function DraggableTodoItem({
       <TodoItem
         todo={todo}
         onDelete={onDelete}
-        onUpdate={onUpdate}
         dragControls={controls}
       />
     </Reorder.Item>
